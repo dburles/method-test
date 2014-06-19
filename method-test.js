@@ -1,9 +1,32 @@
 if (Meteor.isClient) {
+  Session.setDefault('called', 0);
+  Session.setDefault('received', 0);
+  Session.setDefault('returned', 0);
+  
+  Template.hello.helpers({
+    called: function() {
+      return Session.get('called');
+    },
+    
+    received: function() {
+      return Session.get('received');
+    },
+    
+    returned: function() {
+      return Session.get('returned')
+    }
+  });
+  
   Template.hello.events({
     'click input': function () {
       _.times(20, function() {
-        Meteor.call('test', function() {
-          console.log(arguments);
+        Session.set('called', Session.get('called') + 1);
+        Meteor.apply('test', [], {
+          onResultReceived: function() {
+            Session.set('received', Session.get('received') + 1)
+          }
+        }, function() {
+          Session.set('returned', Session.get('returned') + 1);
         });
       });
     }
