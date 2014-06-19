@@ -1,4 +1,6 @@
 if (Meteor.isClient) {
+  Meteor.subscribe('data')
+  
   Session.setDefault('called', 0);
   Session.setDefault('received', 0);
   Session.setDefault('returned', 0);
@@ -42,19 +44,33 @@ if (Meteor.isServer) {
     }, time);
     return f.wait();
   };
+  
+  var speedLoop = function() {
+    for (var i = 0; i < 1000000000; i++);
+  }
+
+  var Data = new Meteor.Collection('data');
+  var SubData = new Meteor.Collection('subdata')
+  Meteor.publish('data', function() {
+    var self = this;
+    Data.find().observeChanges({
+      added: function(id, doc) {
+        self.added('users', id, doc);
+        
+        SubData.find({dataId: id}).observeChanges({
+          added: function(id, doc) {
+            self.added('subdata', id, doc);
+          }
+        })
+      }
+    })
+  });
 
   Meteor.methods({
     test: function() {
-      // this.unblock();
-
-      var id = Random.id();
-
-      console.log('init ' + id);
-      waitFor(1000);
-      console.log('done ' + id);
-      console.log();
-
-      return 'done ' + id;
+      speedLoop();
+      var id = Data.insert({})
+      SubData.insert({dataId: id});
     }
   });
 }
